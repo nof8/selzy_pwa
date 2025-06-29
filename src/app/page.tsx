@@ -26,7 +26,6 @@ export default function Home() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>("");
-  const [rawResponse, setRawResponse] = useState<any>(null);
   const [campaignStats, setCampaignStats] = useState<Record<number, CampaignStats>>({});
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -58,33 +57,35 @@ export default function Home() {
   const fetchCampaigns = async () => {
     setLoading(true);
     setError("");
-    setRawResponse(null);
     try {
       const tenYearsAgo = new Date();
       tenYearsAgo.setUTCFullYear(tenYearsAgo.getUTCFullYear() - 10);
       const pad = (n: number) => n.toString().padStart(2, '0');
       const from = `${tenYearsAgo.getUTCFullYear()}-${pad(tenYearsAgo.getUTCMonth() + 1)}-${pad(tenYearsAgo.getUTCDate())} 00:00:00`;
       const res = await fetch(`/api/getCampaigns?api_key=${apiKey}&from=${encodeURIComponent(from)}&limit=10000`);
-      let data = null;
+      let data: unknown = null;
       try {
         data = await res.json();
         console.log('Frontend Selzy API response:', data);
-        setRawResponse(data);
       } catch (jsonErr) {
-        setRawResponse({ error: 'Invalid JSON', details: String(jsonErr) });
         throw new Error('Invalid JSON response');
       }
-      if (res.ok && data.result && Array.isArray(data.result) && data.result.length > 0) {
-        const sorted = data.result.sort((a: any, b: any) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime());
+      if (
+        res.ok && typeof data === 'object' && data !== null && 'result' in data && Array.isArray((data as any).result) && (data as any).result.length > 0
+      ) {
+        const sorted = (data as { result: any[] }).result.sort((a: { start_time: string }, b: { start_time: string }) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime());
         setCampaigns(sorted.slice(0, 5));
-      } else if (data.error) {
-        setError(data.error);
+      } else if (typeof data === 'object' && data !== null && 'error' in data) {
+        setError((data as { error: string }).error);
       } else {
         setError("No campaigns found.");
       }
-    } catch (e: any) {
-      setError(e.message || "Unknown error");
-      setRawResponse({ error: e.message || 'Unknown error', details: e });
+    } catch (e: unknown) {
+      if (e instanceof Error) {
+        setError(e.message);
+      } else {
+        setError("Unknown error");
+      }
     } finally {
       setLoading(false);
     }
@@ -154,12 +155,21 @@ export default function Home() {
         ) : (
           <>
             <div className="flex justify-between items-center mb-4">
-              <button
-                onClick={handleLogout}
-                className="text-red-500 hover:underline text-sm"
-              >
-                Logout
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={fetchCampaigns}
+                  title="Refresh"
+                  className="bg-blue-500 text-white text-sm px-3 py-1 rounded hover:bg-blue-600 transition"
+                >
+                  Refresh
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="bg-red-500 text-white text-sm px-3 py-1 rounded hover:bg-red-600 transition"
+                >
+                  Logout
+                </button>
+              </div>
             </div>
             <h2 className="text-xl font-semibold mb-2">Last 5 Campaigns</h2>
             {loading ? (

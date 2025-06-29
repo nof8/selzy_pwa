@@ -6,7 +6,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { api_key, from, to, limit } = req.query;
+  const { api_key, from } = req.query;
 
   if (!api_key || !from) {
     return res.status(400).json({ error: 'Missing api_key or from parameter' });
@@ -21,8 +21,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const data = await response.json();
     console.log('Selzy response:', data);
     res.status(response.status).json({ ...data, selzy_request_url: url });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.log('Selzy fetch error:', error);
-    res.status(500).json({ error: error.message || 'Internal server error', selzy_request_url: url });
+    if (error instanceof Error) {
+      res.status(500).json({ error: error.message, selzy_request_url: url });
+    } else {
+      res.status(500).json({ error: 'Internal server error', selzy_request_url: url });
+    }
   }
 } 

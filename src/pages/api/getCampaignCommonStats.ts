@@ -17,7 +17,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const response = await fetch(url);
     const data = await response.json();
     res.status(response.status).json(data);
-  } catch (error: any) {
-    res.status(500).json({ error: error.message || 'Internal server error' });
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      res.status(500).json({ error: error.message });
+    } else {
+      res.status(500).json({ error: 'Internal server error' });
+    }
   }
 } 
