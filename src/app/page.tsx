@@ -73,7 +73,9 @@ export default function Home() {
       if (
         res.ok && typeof data === 'object' && data !== null && 'result' in data && Array.isArray((data as { result: unknown[] }).result) && (data as { result: unknown[] }).result.length > 0
       ) {
-        const sorted = (data as { result: { start_time: string }[] }).result.sort((a: { start_time: string }, b: { start_time: string }) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime());
+        const sorted = (data as { result: Campaign[] }).result.sort(
+          (a, b) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime()
+        );
         setCampaigns(sorted.slice(0, 5));
       } else if (typeof data === 'object' && data !== null && 'error' in data) {
         setError((data as { error: string }).error);
