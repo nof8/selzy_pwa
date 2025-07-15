@@ -2,14 +2,19 @@
   "name": "Selzy Campaigns",
   "short_name": "Selzy",
   "description": "Email marketing campaigns dashboard for Selzy platform.",
+  "id": "/selzy-pwa",
   "start_url": "/",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone"],
   "orientation": "portrait-primary",
   "background_color": "#f8fafc",
   "theme_color": "#3b1b67",
   "categories": ["business", "productivity"],
   "lang": "en",
   "scope": "/",
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  },
   "icons": [
     {
       "src": "/icon-192x192.png",
@@ -34,6 +39,20 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/selzy-pwa-wide-screenshot.png",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Selzy Campaigns Dashboard - Desktop View"
+    },
+    {
+      "src": "/selzy-pwa-narrow-screenshot.png",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Selzy Campaigns Dashboard - Mobile View"
     }
   ]
 }

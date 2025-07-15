@@ -3,8 +3,9 @@ import withPWA from 'next-pwa';
 const pwaConfig = {
   dest: 'public',
   register: true,
-  skipWaiting: true,
-  disable: false, // Enable PWA in all environments for testing
+  skipWaiting: false, // Prevent aggressive updates that cause reloads
+  disable: process.env.NODE_ENV === 'development', // Disable in dev to prevent reload issues
+  reloadOnOnline: false, // Don't reload when coming back online
   runtimeCaching: [
     {
       urlPattern: /^https:\/\/apig\.selzy\.com\/.*/i,
