@@ -4,7 +4,7 @@ const pwaConfig = {
   dest: 'public',
   register: true,
   skipWaiting: true,
-  disable: process.env.NODE_ENV === 'development', // Disable PWA in dev
+  disable: false, // Enable PWA in all environments for testing
   runtimeCaching: [
     {
       urlPattern: /^https:\/\/apig\.selzy\.com\/.*/i,
