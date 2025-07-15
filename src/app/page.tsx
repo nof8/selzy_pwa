@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
+import Image from "next/image";
 
 interface Campaign {
   id: number;
@@ -44,6 +45,23 @@ interface UserInfo {
   };
 }
 
+interface ErrorResponse {
+  error?: Array<{ code?: string }> | {
+    error?: Record<string, Array<{ code?: string }>>;
+  };
+  message?: string;
+  raw?: unknown;
+}
+
+interface ApiResponse {
+  success: boolean;
+  result?: {
+    list: Campaign[] | UserInfo[];
+    token?: string;
+  };
+  error?: string;
+}
+
 export default function Home() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -55,7 +73,6 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string>("");
-  const [rawError, setRawError] = useState<any>(null);
   const [errorCode, setErrorCode] = useState<string | null>(null);
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(true);
@@ -73,7 +90,7 @@ export default function Home() {
       if (credentials) {
         return JSON.parse(atob(credentials));
       }
-    } catch (e) {
+    } catch {
       console.error("Failed to decode credentials");
     }
     return null;
@@ -84,7 +101,7 @@ export default function Home() {
   };
 
   // Helper function to extract first UUID error code
-  const extractErrorCode = (errorResponse: any): string | null => {
+  const extractErrorCode = (errorResponse: ErrorResponse): string | null => {
     try {
       // Format 1: Direct error array (like rate limiting)
       if (Array.isArray(errorResponse?.error) && errorResponse.error.length > 0) {
@@ -95,7 +112,7 @@ export default function Home() {
       }
       
       // Format 2: Nested field errors (like validation errors)
-      if (errorResponse?.error?.error) {
+      if (errorResponse?.error && !Array.isArray(errorResponse.error) && errorResponse.error.error) {
         const fields = errorResponse.error.error;
         for (const fieldName in fields) {
           const fieldErrors = fields[fieldName];
@@ -107,8 +124,8 @@ export default function Home() {
           }
         }
       }
-    } catch (e) {
-      console.error("Failed to extract error code:", e);
+    } catch {
+      console.error("Failed to extract error code");
     }
     return null;
   };
@@ -130,12 +147,11 @@ export default function Home() {
         setEmail(storedEmail);
         setPassword(storedPassword);
         setRememberMe(true);
-        setRawError(null);
         setErrorCode(null);
         return true;
       }
-    } catch (e) {
-      console.error("Auto-login failed:", e);
+    } catch {
+      console.error("Auto-login failed");
     } finally {
       setLoading(false);
     }
@@ -194,7 +210,7 @@ export default function Home() {
       console.log('User info response:', JSON.stringify(data, null, 2));
       
       if (res.ok && data.success && data.result?.list?.[0]) {
-        const user = data.result.list[0];
+        const user = data.result.list[0] as UserInfo;
         setUserInfo({
           email: user.email,
           firstName: user.firstName,
@@ -202,8 +218,8 @@ export default function Home() {
           balance: user.balance,
         });
       }
-    } catch (e) {
-      console.error('Failed to fetch user info:', e);
+    } catch {
+      console.error('Failed to fetch user info');
     }
   };
 
@@ -216,7 +232,6 @@ export default function Home() {
       setLoadingMore(true);
     }
     setError("");
-    setRawError(null);
     setErrorCode(null);
     try {
       const url = `https://apig.selzy.com/campaign?limit=5&offset=${currentOffset}&orderType=desc&orderBy=startedAt`;
@@ -232,7 +247,7 @@ export default function Home() {
       });
       console.log('Response status:', res.status);
       console.log('Response headers:', Object.fromEntries(res.headers.entries()));
-      let data: unknown = null;
+      let data: ApiResponse | null = null;
       try {
         data = await res.json();
         console.log('Full JSON response:', JSON.stringify(data, null, 2));
@@ -240,8 +255,8 @@ export default function Home() {
         throw new Error("Invalid JSON response");
       }
       console.log('Campaign API response:', { status: res.status, data });
-      if (res.ok && typeof data === "object" && data !== null && "result" in data && (data as any).result.list) {
-        const campaignList = (data as any).result.list;
+      if (res.ok && data?.result?.list) {
+        const campaignList = data.result.list as Campaign[];
         console.log('Number of campaigns returned from API:', campaignList.length);
         
         // Fetch letter subjects for campaigns
@@ -267,8 +282,8 @@ export default function Home() {
               console.log('Letter API response:', letterData);
               
               if (letterData.success && letterData.result?.list) {
-                const letterMap = new Map();
-                letterData.result.list.forEach((letter: any) => {
+                const letterMap = new Map<number, string>();
+                letterData.result.list.forEach((letter: { id: number; subject: string }) => {
                   letterMap.set(letter.id, letter.subject);
                 });
                 
@@ -279,8 +294,8 @@ export default function Home() {
                 }));
               }
             }
-          } catch (e) {
-            console.error('Failed to fetch letter subjects:', e);
+          } catch {
+            console.error('Failed to fetch letter subjects');
           }
         }
         
@@ -313,13 +328,10 @@ export default function Home() {
         setToken(null);
         localStorage.removeItem("selzy_token");
         setError("Session expired. Please login again.");
-        setRawError(data);
-      } else if (typeof data === "object" && data !== null && "error" in data) {
-        setError((data as { error: string }).error);
-        setRawError(data);
+      } else if (data?.error) {
+        setError(data.error);
       } else {
         setError("No campaigns found.");
-        setRawError(data);
       }
     } catch (e: unknown) {
       console.error('Campaign fetch error:', e);
@@ -343,7 +355,6 @@ export default function Home() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    setRawError(null);
     setLoading(true);
     try {
       const res = await fetch("https://apig.selzy.com/auth/token", {
@@ -366,16 +377,17 @@ export default function Home() {
         
         setEmail("");
         setPassword("");
-        setRawError(null);
         setErrorCode(null);
       } else {
         setError(data.message || "Login failed");
-        setRawError(data.raw || data);
         setErrorCode(extractErrorCode(data));
       }
-    } catch (e: any) {
-      setError(e.message || "Login failed");
-      setRawError(null);
+    } catch (e: unknown) {
+      if (e instanceof Error) {
+        setError(e.message);
+      } else {
+        setError("Login failed");
+      }
       setErrorCode(null);
     } finally {
       setLoading(false);
@@ -397,7 +409,6 @@ export default function Home() {
     setCampaigns([]);
     setUserInfo(null);
     setError("");
-    setRawError(null);
     setErrorCode(null);
     setOffset(0);
     setHasMore(true);
@@ -408,14 +419,15 @@ export default function Home() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4">
       <div className="w-full max-w-2xl mx-auto pt-8">
             <div className="flex items-center justify-center mb-8">
-          <img 
+          <Image 
             src="/selzy-logo.svg" 
             alt="Selzy" 
-            className="w-16 h-6 mr-3"
+            width={64}
+            height={24}
+            className="mr-3"
             style={{ display: 'block' }}
-            onError={(e) => {
+            onError={() => {
               console.error('Logo failed to load');
-              e.currentTarget.style.display = 'none';
             }}
           />
           <h1 className="text-2xl font-bold text-center text-gray-500">Campaigns</h1>
@@ -515,14 +527,6 @@ export default function Home() {
                   {campaigns.map(c => {
                     // Use startedAt if available, otherwise use createdAt
                     const displayDate = c.startedAt || c.createdAt;
-                    // Format date to YYYY-MM-DD hh:mm
-                    const formattedDate = new Date(displayDate).toLocaleString('sv-SE', {
-                      year: 'numeric',
-                      month: '2-digit',
-                      day: '2-digit',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    }).replace(' ', ' ');
                     
                     return (
                       <div key={c.id} className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl p-4 border border-gray-200 hover:shadow-md transition-shadow duration-200">
