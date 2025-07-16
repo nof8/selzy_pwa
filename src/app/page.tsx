@@ -310,7 +310,8 @@ export default function Home() {
         // Fetch list names
         if (listIds.length > 0) {
           try {
-            const listUrl = `https://apig.selzy.com/subscriber/list?listIds=${encodeURIComponent(JSON.stringify(listIds))}`;
+            const listIdsParams = listIds.map(id => `listsIds[]=${id}`).join('&');
+            const listUrl = `https://apig.selzy.com/subscriber/list?limit=${listIds.length}&${listIdsParams}&withDeleted=1`;
             console.log('Fetching lists from:', listUrl);
             const listRes = await fetch(listUrl, {
               method: 'GET',
