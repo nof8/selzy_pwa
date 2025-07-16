@@ -33,6 +33,12 @@ interface Campaign {
   resendNonOpenersSubject: string | null;
   dkimStatus: string | null;
   subject?: string; // Added for letter subject
+  listName?: string; // Added for list name
+}
+
+interface SubscriberList {
+  id: number;
+  name: string;
 }
 
 interface UserInfo {
@@ -259,10 +265,12 @@ export default function Home() {
         const campaignList = data.result.list as Campaign[];
         console.log('Number of campaigns returned from API:', campaignList.length);
         
-        // Fetch letter subjects for campaigns
+        // Fetch letter subjects and list names for campaigns
         const letterIds = campaignList.map((campaign: Campaign) => campaign.letterId).filter(Boolean);
-        let campaignsWithSubjects = campaignList;
+        const listIds = [...new Set(campaignList.map((campaign: Campaign) => campaign.listId).filter(Boolean))];
+        let campaignsWithSubjectsAndLists = campaignList;
         
+        // Fetch letter subjects
         if (letterIds.length > 0) {
           try {
             const letterUrl = `https://apig.selzy.com/letter?ids=${letterIds.join('%2C')}&limit=20`;
@@ -288,7 +296,7 @@ export default function Home() {
                 });
                 
                 // Add subjects to campaigns
-                campaignsWithSubjects = campaignList.map((campaign: Campaign) => ({
+                campaignsWithSubjectsAndLists = campaignList.map((campaign: Campaign) => ({
                   ...campaign,
                   subject: letterMap.get(campaign.letterId) || 'No subject'
                 }));
@@ -299,11 +307,48 @@ export default function Home() {
           }
         }
         
+        // Fetch list names
+        if (listIds.length > 0) {
+          try {
+            const listUrl = `https://apig.selzy.com/subscriber/list?listIds=${encodeURIComponent(JSON.stringify(listIds))}`;
+            console.log('Fetching lists from:', listUrl);
+            const listRes = await fetch(listUrl, {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'Authorization': `Bearer ${token}`,
+              },
+              mode: 'cors',
+            });
+            
+            if (listRes.ok) {
+              const listData = await listRes.json();
+              console.log('List API response:', listData);
+              
+              if (listData.success && listData.result?.list) {
+                const listMap = new Map<number, string>();
+                listData.result.list.forEach((list: SubscriberList) => {
+                  listMap.set(list.id, list.name);
+                });
+                
+                // Add list names to campaigns
+                campaignsWithSubjectsAndLists = campaignsWithSubjectsAndLists.map((campaign: Campaign) => ({
+                  ...campaign,
+                  listName: listMap.get(campaign.listId) || 'Unknown list'
+                }));
+              }
+            }
+          } catch {
+            console.error('Failed to fetch list names');
+          }
+        }
+        
         if (reset) {
-          setCampaigns(campaignsWithSubjects);
+          setCampaigns(campaignsWithSubjectsAndLists);
           setOffset(5);
         } else {
-          setCampaigns(prev => [...prev, ...campaignsWithSubjects]);
+          setCampaigns(prev => [...prev, ...campaignsWithSubjectsAndLists]);
           setOffset(prev => prev + 5);
         }
         
@@ -547,7 +592,10 @@ export default function Home() {
                             {c.status.toUpperCase()}
                           </span>
                         </div>
-                        <div className="text-lg font-bold text-gray-800 mb-3">{c.subject || `Campaign #${c.id}`}</div>
+                        <div className="text-lg font-bold text-gray-800 mb-1">{c.subject || `Campaign #${c.id}`}</div>
+                        {c.listName && (
+                          <div className="text-sm text-gray-600 mb-3">List: {c.listName}</div>
+                        )}
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                           <div className="bg-white rounded-lg p-2 text-center">
                             <div className="font-semibold text-gray-800">{c.numSent}</div>
