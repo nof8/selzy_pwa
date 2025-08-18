@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "com.selzy.pwa",
+        "sha256_cert_fingerprints": ["98:72:53:71:CD:23:D6:BE:40:83:77:9B:BB:2E:43:62:64:F6:83:3B:02:41:72:7A:9C:22:BD:1B:EB:E6:DC:82"]
+      }
+    }]
