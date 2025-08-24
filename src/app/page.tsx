@@ -231,7 +231,7 @@ export default function Home() {
 
   const fetchCampaigns = async (token: string, currentOffset: number = 0, reset: boolean = false) => {
     if (reset) {
-      setLoading(true);
+    setLoading(true);
       setOffset(0);
       setHasMore(true);
     } else {
@@ -445,12 +445,11 @@ export default function Home() {
     setToken(null);
     localStorage.removeItem("selzy_token");
     
-    // Only clear credentials if "Remember me" is not checked
-    if (!rememberMe) {
-      clearCredentials();
-      setEmail("");
-      setPassword("");
-    }
+    // Clear saved credentials on logout
+    clearCredentials();
+    setEmail("");
+    setPassword("");
+    setRememberMe(false);
     
     setCampaigns([]);
     setUserInfo(null);
@@ -461,7 +460,7 @@ export default function Home() {
     setRememberMe(false);
   };
 
-    return (
+  return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4">
       <div className="w-full max-w-2xl mx-auto pt-8">
             <div className="flex items-center justify-center mb-8">
@@ -628,8 +627,8 @@ export default function Home() {
                     >
                       {loadingMore ? 'Loading...' : 'Load more...'}
                     </button>
-                  </div>
-                )}
+                        </div>
+                      )}
               </>
             )}
           </>

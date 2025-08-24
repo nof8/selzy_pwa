@@ -27,8 +27,8 @@ A Progressive Web App (PWA) for managing and viewing Selzy email marketing campa
    ```
 
 2. **Start development server**:
-   ```bash
-   npm run dev
+```bash
+npm run dev
    ```
 
 3. **Open in browser**:
