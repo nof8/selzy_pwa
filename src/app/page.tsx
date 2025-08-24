@@ -425,8 +425,11 @@ export default function Home() {
         setPassword("");
         setErrorCode(null);
       } else {
-        // Check if it's an authentication error (wrong credentials)
-        if (res.status === 400 || res.status === 401 || res.status === 403) {
+        // Check if it's an authentication error with specific login error message
+        if ((res.status === 400 || res.status === 401 || res.status === 403) && 
+            data.error?.login?.[0]?.message) {
+          setError(data.error.login[0].message);
+        } else if (res.status === 400 || res.status === 401 || res.status === 403) {
           setError("Invalid email or password. Please check your credentials and try again.");
         } else {
           setError(data.message || "Login failed");
