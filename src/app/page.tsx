@@ -425,14 +425,19 @@ export default function Home() {
         setPassword("");
         setErrorCode(null);
       } else {
-        setError(data.message || "Login failed");
+        // Check if it's an authentication error (wrong credentials)
+        if (res.status === 400 || res.status === 401 || res.status === 403) {
+          setError("Invalid email or password. Please check your credentials and try again.");
+        } else {
+          setError(data.message || "Login failed");
+        }
         setErrorCode(extractErrorCode(data));
       }
     } catch (e: unknown) {
       if (e instanceof Error) {
-        setError(e.message);
+        setError("Network error. Please check your internet connection and try again.");
       } else {
-        setError("Login failed");
+        setError("Network error. Please check your internet connection and try again.");
       }
       setErrorCode(null);
     } finally {
