@@ -1,8 +1,16 @@
-[{
-      "relation": ["delegate_permission/common.handle_all_urls"],
-      "target": {
-        "namespace": "android_app",
-        "package_name": "com.selzy.pwa",
-        "sha256_cert_fingerprints": ["98:72:53:71:CD:23:D6:BE:40:83:77:9B:BB:2E:43:62:64:F6:83:3B:02:41:72:7A:9C:22:BD:1B:EB:E6:DC:82"]
-      }
-    }]
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls",
+      "delegate_permission/common.get_login_creds"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.selzy.pwa",
+      "sha256_cert_fingerprints": [
+        "98:72:53:71:CD:23:D6:BE:40:83:77:9B:BB:2E:43:62:64:F6:83:3B:02:41:72:7A:9C:22:BD:1B:EB:E6:DC:82",
+        "5F:6D:8A:34:A0:98:18:52:6A:D1:35:75:A3:7A:A3:05:17:AC:CA:A4:33:3F:ED:FD:62:A7:11:7E:B6:C2:13:BC"
+      ]
+    }
+  }
+]
